@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { parseCsv } from "../lib/csv"
 import { RouletteItem } from "../types/roulette"
+import { applyWeightExpression } from "../lib/expression"
 
 type RouletteMode = "instant" | "animated"
 
@@ -47,6 +48,26 @@ export default function Page() {
     }
   }
 
+  const preview = useMemo(() => {
+    if (!parsed.ok) return { ok: false as const, error: parsed.error }
+
+    const rows = []
+
+    for (const item of parsed.items) {
+      const result = applyWeightExpression(expression, item.weight)
+
+      if (!result.ok) {
+        return { ok: false as const, error: result.error }
+      }
+
+      rows.push({
+        ...item,
+        adjustedWeight: result.value,
+      })
+    }
+
+    return { ok: true as const, rows }
+  }, [parsed, expression])
 
   // TODO: 抽選関数の実装
   const handlePick = () => {
@@ -173,7 +194,6 @@ export default function Page() {
             )}
           </section>
 
-          {/* 右カラム: プレビューと結果 */}
           <div className="grid gap-6">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold">候補プレビュー</h2>
@@ -183,38 +203,50 @@ export default function Page() {
                   {parsed.error}
                 </div>
               )}
+
+              {!preview.ok && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {preview.error}
+                </div>
+              )}
               
-              {parsed.ok && parsed.items.length === 0 ? (
+              {parsed.ok &&  parsed.items.length === 0 ? (
                 <p className="text-sm text-slate-500">候補がありません</p>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-slate-200">
-                  <table className="min-w-full border-collapse text-sm">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="border-b border-slate-200 px-4 py-3 text-left font-semibold">
-                          名前
-                        </th>
-                        <th className="border-b border-slate-200 px-4 py-3 text-left font-semibold">
-                          重み
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {parsed.ok && parsed.items.map((item) => (
-                        <tr key={item.id} className="odd:bg-white even:bg-slate-50/50">
-                          <td className="border-b border-slate-100 px-4 py-3">
-                            {item.name || (
-                              <span className="text-slate-400">(空)</span>
-                            )}
-                          </td>
-                          <td className="border-b border-slate-100 px-4 py-3 font-mono">
-                            {item.weight || (
-                              <span className="text-slate-400">(空)</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                  <table className="w-full overflow-hidden rounded-xl border border-slate-200 text-sm">
+
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="border-b px-4 py-3 text-left">名前</th>
+                      <th className="border-b px-4 py-3 text-left">元重み</th>
+                      <th className="border-b px-4 py-3 text-left">変換後重み</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                  {preview.ok && (preview.rows.map((item) => (
+                    <tr key={item.id} className="odd:bg-white even:bg-slate-50">
+
+                    <td className="border-b px-4 py-3">
+                      {item.name}
+                    </td>
+
+                    <td className="border-b px-4 py-3 font-mono">
+                      {item.weight}
+                    </td>
+
+                    <td className="border-b px-4 py-3 font-mono">
+                      {item.adjustedWeight < 1e-9 ? 0 : item.adjustedWeight.toFixed(3)}
+                    </td>
+
+                    </tr>
+
+                  )))}
+
+                  </tbody>
+
                   </table>
                 </div>
               )}
