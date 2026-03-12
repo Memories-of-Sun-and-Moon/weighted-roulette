@@ -22,33 +22,44 @@ export default function Page() {
   const [mode, setMode] = useState<RouletteMode>("instant")
   const [result, setResult] = useState<string>("")
   const [error, setError] = useState<string>("")
+  const [fileError, setFileError] = useState("")
 
-  const previewItems = useMemo<PreviewItem[]>(() => {
-    return csvText
-      .split("\n")
-      .map((line, index) => line.trim())
-      .filter((line) => line.length > 0)
-      .map((line, index) => {
-        const [name = "", weight = ""] = line.split(",").map((part) => part.trim())
-        return {
-          id: index,
-          name,
-          weight,
-        }
-      })
+  const parsed = useMemo(() => {
+    return parseCsv(csvText)
   }, [csvText])
+
+  const handleCsvFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setFileError("")
+
+    try {
+      const text = await file.text()
+      setCsvText(text)
+      setResult("")
+    } catch {
+      setFileError("CSVファイルの読み込みに失敗しました")
+    } finally {
+      e.target.value = ""
+    }
+  }
+
 
   // TODO: 抽選関数の実装
   const handlePick = () => {
+    if (!parsed.ok) return
     setError("")
 
-    if (previewItems.length === 0) {
+    if (parsed.items.length === 0) {
       setResult("")
       setError("候補がありません")
       return
     }
 
-    setResult(previewItems[0]?.name ?? "")
+    setResult(parsed.items[0]?.name ?? "")
   }
 
   return (
@@ -77,7 +88,10 @@ export default function Page() {
                 placeholder={"[名前], [重み]\nA, 10\nB, 20"}
               />
               <p className="mt-2 text-xs text-slate-500">
-                1行につき「[名前], [重み]」の形式で入力します
+                1行につき「[名前], [重み]」の形式で入力します。
+              </p>
+              <p className="mt-2 text-xs text-slate-500">
+                [名前] にカンマ "," を含めたい場合は、ダブルクオーテーション "" で囲んでください。例: "Osaka, Japan", 5
               </p>
             </div>
 
@@ -85,10 +99,10 @@ export default function Page() {
               <label className="mb-2 block text-sm font-medium">
                 CSVファイル
               </label>
-              // TODO: csv ファイルを読み込む部分の実装
               <input
                 type="file"
                 accept=".csv,text/csv"
+                onChange={handleCsvFileChange}
                 className="block w-full text-sm"
               />
               <p className="mt-2 text-xs text-slate-500">
@@ -163,8 +177,14 @@ export default function Page() {
           <div className="grid gap-6">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold">候補プレビュー</h2>
-
-              {previewItems.length === 0 ? (
+              
+              {!parsed.ok && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                  {parsed.error}
+                </div>
+              )}
+              
+              {parsed.ok && parsed.items.length === 0 ? (
                 <p className="text-sm text-slate-500">候補がありません</p>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -180,7 +200,7 @@ export default function Page() {
                       </tr>
                     </thead>
                     <tbody>
-                      {previewItems.map((item) => (
+                      {parsed.ok && parsed.items.map((item) => (
                         <tr key={item.id} className="odd:bg-white even:bg-slate-50/50">
                           <td className="border-b border-slate-100 px-4 py-3">
                             {item.name || (
@@ -213,7 +233,7 @@ export default function Page() {
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <dt className="text-slate-500">候補数</dt>
-                  <dd>{previewItems.length}</dd>
+                  <dd>{parsed.ok ? parsed.items.length : -1}</dd>
                 </div>
               </dl>
             </section>
@@ -229,7 +249,7 @@ export default function Page() {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">
-                    まだ抽選していません
+                    まだ抽選していません。
                   </p>
                 )}
               </div>
