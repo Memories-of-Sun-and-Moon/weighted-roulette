@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { parseCsv } from "../lib/csv"
 import { RouletteItem } from "../types/roulette"
 import { applyWeightExpression } from "../lib/expression"
+import { pickWeighted } from "../lib/roulette"
 
 type RouletteMode = "instant" | "animated"
 
@@ -22,6 +23,7 @@ export default function Page() {
   const [expression, setExpression] = useState("x")
   const [mode, setMode] = useState<RouletteMode>("instant")
   const [result, setResult] = useState<string>("")
+  const [pickError, setPickError] = useState("")
   const [error, setError] = useState<string>("")
   const [fileError, setFileError] = useState("")
 
@@ -69,18 +71,29 @@ export default function Page() {
     return { ok: true as const, rows }
   }, [parsed, expression])
 
-  // TODO: 抽選関数の実装
   const handlePick = () => {
-    if (!parsed.ok) return
-    setError("")
+    setPickError("")
 
-    if (parsed.items.length === 0) {
+    if (!preview.ok) {
       setResult("")
-      setError("候補がありません")
+      setPickError(preview.error)
       return
     }
 
-    setResult(parsed.items[0]?.name ?? "")
+    const weightedEntries = preview.rows.map((row) => ({
+      item: row,
+      weight: row.adjustedWeight,
+    }))
+
+    const picked = pickWeighted(weightedEntries)
+
+    if (!picked.ok) {
+      setResult("")
+      setPickError(picked.error)
+      return
+    }
+
+    setResult(picked.value.name)
   }
 
   return (
@@ -196,6 +209,27 @@ export default function Page() {
 
           <div className="grid gap-6">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-xl font-semibold">抽選結果</h2>
+
+              <div className="flex min-h-32 items-center justify-center rounded-2xl bg-slate-100 p-6">
+                {pickError && (
+                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {pickError}
+                  </div>
+                )}
+                {result ? (
+                  <div className="text-center">
+                    <p className="mb-2 text-sm text-slate-500">選ばれた項目</p>
+                    <p className="text-3xl font-bold">{result}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    まだ抽選していません。
+                  </p>
+                )}
+              </div>
+            </section>
+            <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold">候補プレビュー</h2>
               
               {!parsed.ok && (
@@ -270,22 +304,6 @@ export default function Page() {
               </dl>
             </section>
 
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-xl font-semibold">抽選結果</h2>
-
-              <div className="flex min-h-32 items-center justify-center rounded-2xl bg-slate-100 p-6">
-                {result ? (
-                  <div className="text-center">
-                    <p className="mb-2 text-sm text-slate-500">選ばれた項目</p>
-                    <p className="text-3xl font-bold">{result}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    まだ抽選していません。
-                  </p>
-                )}
-              </div>
-            </section>
           </div>
         </div>
       </div>
