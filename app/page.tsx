@@ -1,6 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { parseCsv } from "../lib/csv"
+import { RouletteItem } from "../types/roulette"
 
 type RouletteMode = "instant" | "animated"
 
@@ -36,6 +38,7 @@ export default function Page() {
       })
   }, [csvText])
 
+  // TODO: 抽選関数の実装
   const handlePick = () => {
     setError("")
 
@@ -45,7 +48,6 @@ export default function Page() {
       return
     }
 
-    // TODO: 抽選関数の実装
     setResult(previewItems[0]?.name ?? "")
   }
 
