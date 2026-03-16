@@ -1,7 +1,15 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
+
+const isProd = process.env.NODE_ENV === "production"
+const repo = "weighted-roulette"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  output: "export",
+  basePath: isProd ? `/${repo}` : "",
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+}
 
-export default nextConfig;
+export default nextConfig
