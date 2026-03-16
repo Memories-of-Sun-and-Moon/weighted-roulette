@@ -4,7 +4,8 @@ import { useMemo, useState } from "react"
 import { parseCsv } from "../lib/csv"
 import { RouletteItem } from "../types/roulette"
 import { applyWeightExpression } from "../lib/expression"
-import { pickWeighted } from "../lib/roulette"
+import { buildRouletteSegments, pickWeighted } from "../lib/roulette"
+import RouletteWheel from "../components/RouletteWheel"
 
 type RouletteMode = "instant" | "animated"
 
@@ -26,6 +27,8 @@ export default function Page() {
   const [pickError, setPickError] = useState("")
   const [error, setError] = useState<string>("")
   const [fileError, setFileError] = useState("")
+  const [isSpinning, setIsSpinning] = useState(false)
+  const [spinRotation, setSpinRotation] = useState(0)
 
   const parsed = useMemo(() => {
     return parseCsv(csvText)
@@ -62,14 +65,66 @@ export default function Page() {
         return { ok: false as const, error: result.error }
       }
 
+      if (result.value <= 0) continue
+
       rows.push({
         ...item,
         adjustedWeight: result.value,
       })
     }
 
+    if (rows.length === 0) {
+      return {
+        ok: false as const,
+        error: "重みが 0 より大きい要素がありません",
+      }
+    }
+
     return { ok: true as const, rows }
   }, [parsed, expression])
+
+  const startSpin = (
+    entries: { item: { id: number; name: string }; weight: number }[],
+    pickedId: number
+  ) => {
+    const segments = buildRouletteSegments(entries)
+    const target = segments.find((segment) => segment.item.id === pickedId)
+
+    if (!target) {
+      setPickError("当選項目の位置計算に失敗しました")
+      return
+    }
+
+    setIsSpinning(true)
+
+    
+    const segmentWidth = target.endAngle - target.startAngle
+    const randomAngleInSegment = target.startAngle + Math.random() * segmentWidth
+    
+    // 扇形の中央が真上の針に来るように回す
+    const targetRotation = -randomAngleInSegment
+
+    // 何周か回してから止める
+    const extraSpins = 360 * (5 + Math.floor(Math.random() * 5))
+    
+    const currentNormalized = ((spinRotation % 360) + 360) % 360
+    const targetNormalized = ((targetRotation % 360) + 360) % 360
+
+    let delta = targetNormalized - currentNormalized
+    if (delta < 0) {
+      delta += 360
+    }
+
+    const finalRotation = spinRotation + extraSpins + delta
+
+    setSpinRotation(finalRotation)
+
+    setTimeout(() => {
+      const pickedItem = entries.find((entry) => entry.item.id === pickedId)
+      setResult(pickedItem?.item.name ?? "")
+      setIsSpinning(false)
+    }, 3000)
+  }
 
   const handlePick = () => {
     setPickError("")
@@ -93,7 +148,12 @@ export default function Page() {
       return
     }
 
-    setResult(picked.value.name)
+    if (mode === "instant") {
+      setResult(picked.value.name)
+      return
+    }
+
+    startSpin(weightedEntries, picked.value.id)
   }
 
   return (
@@ -195,6 +255,7 @@ export default function Page() {
             <button
               type="button"
               onClick={handlePick}
+              disabled={isSpinning}
               className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
             >
               抽選
@@ -210,7 +271,14 @@ export default function Page() {
           <div className="grid gap-6">
             <section className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-semibold">抽選結果</h2>
-
+              {mode === "animated" && preview.ok && (
+                <div className="flex justify-center my-8">
+                  <RouletteWheel
+                    rows={preview.rows}
+                    rotation={spinRotation}
+                  />
+                  </div>
+              )}
               <div className="flex min-h-32 items-center justify-center rounded-2xl bg-slate-100 p-6">
                 {pickError && (
                   <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
@@ -272,7 +340,7 @@ export default function Page() {
                     </td>
 
                     <td className="border-b px-4 py-3 font-mono">
-                      {item.adjustedWeight < 1e-9 ? 0 : item.adjustedWeight.toFixed(3)}
+                      {item.adjustedWeight === 0 ? 0 : item.adjustedWeight.toFixed(3)}
                     </td>
 
                     </tr>
@@ -299,7 +367,7 @@ export default function Page() {
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <dt className="text-slate-500">候補数</dt>
-                  <dd>{parsed.ok ? parsed.items.length : -1}</dd>
+                  <dd>{preview.ok ? preview.rows.length : -1}</dd>
                 </div>
               </dl>
             </section>

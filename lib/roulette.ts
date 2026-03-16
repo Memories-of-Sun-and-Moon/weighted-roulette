@@ -62,3 +62,40 @@ export function pickWeighted<T>(
     value: entries[entries.length - 1].item,
   }
 }
+
+export type RouletteSegment<T> = {
+  item: T
+  weight: number
+  startAngle: number
+  endAngle: number
+  centerAngle: number
+}
+
+export function buildRouletteSegments<T>(
+  entries: WeightedEntry<T>[]
+): RouletteSegment<T>[] {
+  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0)
+
+  if (totalWeight <= 0) {
+    return []
+  }
+
+  let currentAngle = 0
+
+  return entries.map((entry) => {
+    const angle = (entry.weight / totalWeight) * 360
+    const startAngle = currentAngle
+    const endAngle = currentAngle + angle
+    const centerAngle = (startAngle + endAngle) / 2
+
+    currentAngle = endAngle
+
+    return {
+      item: entry.item,
+      weight: entry.weight,
+      startAngle,
+      endAngle,
+      centerAngle,
+    }
+  })
+}
