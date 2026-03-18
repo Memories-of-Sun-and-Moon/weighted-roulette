@@ -35,7 +35,7 @@ func       := max '(' expression ',' expression ')'
 - ``x`` (デフォルト)
 - ``max(0, 100-x*0.2)``
 
-# 仕様技術
+# 使用技術
 
 ![skillicons](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,nodejs)
 
