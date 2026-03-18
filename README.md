@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Weighted Roulette
 
-## Getting Started
+重み付きのルーレットです。
 
-First, run the development server:
+CSV 形式のテキスト或いは CSV ファイルから候補を読み取り、重み変換式を適用したうえで抽選できます。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+GitHub Pages にて [公開](https://memories-of-sun-and-moon.github.io/weighted-roulette/) しています。
+
+## デモ画像
+
+![demo](./figure/ss.png)
+
+## 使える式
+
+- ``+``
+- ``-``
+- ``*``
+- ``min()``
+- ``max()``
+
+### 詳細(BNF記法)
+
+```
+expression := add
+add        := mul (('+' | '-') mul)*
+mul        := unary ('*' unary)*
+unary      := '-' unary | primary
+primary    := number | x | func | '(' expression ')'
+func       := max '(' expression ',' expression ')'
+           | min '(' expression ',' expression ')'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 変換式例
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- ``x`` (デフォルト)
+- ``max(0, 100-x*0.2)``
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 仕様技術
 
-## Learn More
+![skillicons](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,nodejs)
 
-To learn more about Next.js, take a look at the following resources:
+# 導入方法
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 環境
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install -g pnpm
+```
 
-## Deploy on Vercel
+## インストール
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm install
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 開発用サーバー起動 
+
+```bash
+pnpm dev
+```
+
+``http://localhost:3000``
+
+## ビルド
+
+```bash
+pnpm build
+pnpm start
+```
