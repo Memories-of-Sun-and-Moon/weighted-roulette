@@ -4,7 +4,7 @@
 
 CSV 形式のテキスト或いは CSV ファイルから候補を読み取り、重み変換式を適用したうえで抽選できます。
 
-GitHub Pages にて [公開](https://memories-of-sun-and-moon.github.io/weighted-roulette/) しています。
+GitHub Pages にて [公開](https://mm-rz.github.io/weighted-roulette/) しています。
 
 ## デモ画像
 
