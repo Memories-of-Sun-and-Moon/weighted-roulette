@@ -1,5 +1,7 @@
 # Weighted Roulette
 
+![icon](./app/favicon.ico)
+
 重み付きのルーレットです。
 
 CSV 形式のテキスト或いは CSV ファイルから候補を読み取り、重み変換式を適用したうえで抽選できます。
