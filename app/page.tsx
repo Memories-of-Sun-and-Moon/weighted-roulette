@@ -216,7 +216,7 @@ export default function Page() {
                 placeholder="x"
               />
               <p className="mt-2 text-xs text-slate-500">
-                各種重みに対して、一律で変換を行うことが出来ます。
+                各種重みに対して、一律で変換を行うことができます。
                 </p>
               <p className="mt-2 text-xs text-slate-500">
                 例: x / x*2 / max(0, 100-x*0.2)
