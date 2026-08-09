@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/usr/src/app:cached
+      - node_modules:/usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CI=true
+    command: ["sh", "-c", "pnpm install && pnpm exec next dev --webpack --hostname 0.0.0.0"]
+
+volumes:
+  node_modules:

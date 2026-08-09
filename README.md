@@ -43,29 +43,56 @@ func       := max '(' expression ',' expression ')'
 
 # 導入方法
 
-## 環境
+
+## Docker 開発環境
+
+### ファイル構成
+- `Dockerfile` - アプリをビルドして本番イメージを作成します
+- `docker-compose.yml` - 開発用にローカルソースをマウントし、コンテナ内で `pnpm dev` を実行します
+
+### Docker を使った起動
 
 ```bash
-npm install -g pnpm
+docker compose up --build
 ```
 
-## インストール
+その後、ブラウザで `http://localhost:3000` にアクセスします。
+
+### Docker 内で pnpm を使う
 
 ```bash
-pnpm install
+docker compose exec app pnpm --version
 ```
 
-## 開発用サーバー起動 
+シェルを開いて作業する場合は:
 
 ```bash
-pnpm dev
+docker compose exec app sh
 ```
 
-``http://localhost:3000``
+### node_modules ボリュームのトラブルシュート
 
-## ビルド
+もし `next: not found` などが発生する場合は、古いボリュームが空のまま残っている可能性があります。以下で削除して再作成してください。
 
 ```bash
-pnpm build
-pnpm start
+docker compose down -v
+docker compose up --build
 ```
+
+### Docker コンテナ停止
+
+```bash
+docker compose down
+```
+
+### Docker 本番ビルド
+
+```bash
+docker build -t weighted-roulette .
+```
+
+### 開発時の注意
+
+- `docker-compose.yml` はソースをホストからコンテナへバインドマウントします。
+- `node_modules` はコンテナ内に保持するため、ホスト環境を汚しません。
+- コンテナ上でホットリロードが有効な `pnpm dev --host 0.0.0.0` を使っています。

@@ -1,3 +1,4 @@
+import path from "path"
 import type { NextConfig } from "next"
 
 const isProd = process.env.NODE_ENV === "production"
@@ -9,6 +10,9 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+  },
+  turbopack: {
+    root: path.resolve(process.cwd()),
   },
 }
 
